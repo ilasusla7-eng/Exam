@@ -1,86 +1,85 @@
 # coding: utf-8
 # license: GPLv3
 
-from solar_objects import Star, Planet
+from solar_objects import Star, Planet, Satellite
 
 
 def read_space_objects_data_from_file(input_filename):
-    """Cчитывает данные о космических объектах из файла, создаёт сами объекты
-    и вызывает создание их графических образов
-
-    Параметры:
-
-    **input_filename** — имя входного файла
-    """
-
+    """Считывает данные о космических объектах из файла."""
     objects = []
     with open(input_filename) as input_file:
         for line in input_file:
             if len(line.strip()) == 0 or line[0] == '#':
-                continue  # пустые строки и строки-комментарии пропускаем
-            object_type = line.split()[0].lower()
-            if object_type == "star":  # FIXME: do the same for planet
+                continue
+            parts = line.split()
+            object_type = parts[0].lower()
+            
+            if object_type == "star":
                 star = Star()
                 parse_star_parameters(line, star)
                 objects.append(star)
+            elif object_type == "planet":
+                planet = Planet()
+                parse_planet_parameters(line, planet)
+                objects.append(planet)
+            elif object_type == "satellite":
+                satellite = Satellite()
+                parse_satellite_parameters(line, satellite, objects)
+                objects.append(satellite)
             else:
-                print("Unknown space object")
+                print(f"Unknown space object: {object_type}")
 
     return objects
 
 
 def parse_star_parameters(line, star):
-    """Считывает данные о звезде из строки.
-    Входная строка должна иметь слеюущий формат:
-    Star <радиус в пикселах> <цвет> <масса> <x> <y> <Vx> <Vy>
+    parts = line.split()
+    star.R = int(parts[1])
+    star.color = parts[2]
+    star.m = float(parts[3])
+    star.x = float(parts[4])
+    star.y = float(parts[5])
+    star.Vx = float(parts[6])
+    star.Vy = float(parts[7])
 
-    Здесь (x, y) — координаты зведы, (Vx, Vy) — скорость.
-    Пример строки:
-    Star 10 red 1000 1 2 3 4
-
-    Параметры:
-
-    **line** — строка с описание звезды.
-    **star** — объект звезды.
-    """
-
-    pass  # FIXME: not done yet
 
 def parse_planet_parameters(line, planet):
-    """Считывает данные о планете из строки.
-    Предполагается такая строка:
-    Входная строка должна иметь слеюущий формат:
-    Planet <радиус в пикселах> <цвет> <масса> <x> <y> <Vx> <Vy>
+    parts = line.split()
+    planet.R = int(parts[1])
+    planet.color = parts[2]
+    planet.m = float(parts[3])
+    planet.x = float(parts[4])
+    planet.y = float(parts[5])
+    planet.Vx = float(parts[6])
+    planet.Vy = float(parts[7])
 
-    Здесь (x, y) — координаты планеты, (Vx, Vy) — скорость.
-    Пример строки:
-    Planet 10 red 1000 1 2 3 4
 
-    Параметры:
-
-    **line** — строка с описание планеты.
-    **planet** — объект планеты.
-    """
-    pass  # FIXME: not done yet...
+def parse_satellite_parameters(line, satellite, objects):
+    """Формат: Satellite <радиус> <цвет> <масса> <x> <y> <Vx> <Vy> <индекс_родителя>"""
+    parts = line.split()
+    satellite.R = int(parts[1])
+    satellite.color = parts[2]
+    satellite.m = float(parts[3])
+    satellite.x = float(parts[4])
+    satellite.y = float(parts[5])
+    satellite.Vx = float(parts[6])
+    satellite.Vy = float(parts[7])
+    parent_index = int(parts[8])
+    satellite.parent = objects[parent_index]
 
 
 def write_space_objects_data_to_file(output_filename, space_objects):
-    """Сохраняет данные о космических объектах в файл.
-    Строки должны иметь следующий формат:
-    Star <радиус в пикселах> <цвет> <масса> <x> <y> <Vx> <Vy>
-    Planet <радиус в пикселах> <цвет> <масса> <x> <y> <Vx> <Vy>
-
-    Параметры:
-
-    **output_filename** — имя входного файла
-    **space_objects** — список объектов планет и звёзд
-    """
+    """Сохраняет данные о космических объектах в файл."""
     with open(output_filename, 'w') as out_file:
-        for obj in space_objects:
-            print(out_file, "%s %d %s %f" % ('1', 2, '3', 4.5))
-            # FIXME: should store real values
+        for i, obj in enumerate(space_objects):
+            if obj.type == 'star':
+                out_file.write(f"Star {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
+            elif obj.type == 'planet':
+                out_file.write(f"Planet {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
+            elif obj.type == 'satellite':
+                parent_index = space_objects.index(obj.parent)
+                out_file.write(f"Satellite {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy} {parent_index}\n")
 
-# FIXME: хорошо бы ещё сделать функцию, сохранающую статистику в заданный файл...
 
 if __name__ == "__main__":
     print("This module is not for direct call!")
