@@ -20,8 +20,8 @@ def calculate_force(body, space_objects):
             continue  # тело не действует гравитационной силой на само себя!
         r = ((body.x - obj.x)**2 + (body.y - obj.y)**2)**0.5
         F = (gravitational_constant * body.m * obj.m) / r ** 2
-        body.Fx += (F * abs(body.x - obj.x)) / r  # FIXME: нужно вывести формулу...
-        body.Fy += (F * abs(body.y - obj.y)) / r  # FIXME: нужно вывести формулу...
+        body.Fx -= (F * (body.x - obj.x)) / r  # FIXME: нужно вывести формулу...
+        body.Fy -= (F * (body.y - obj.y)) / r  # FIXME: нужно вывести формулу...
 
 
 def move_space_object(body, dt):
@@ -34,7 +34,7 @@ def move_space_object(body, dt):
 
     ax = body.Fx/body.m
     body.Vx += ax*dt
-    body.x = body.Vx * dt  # FIXME: не понимаю как менять...
+    body.x += body.Vx * dt  # FIXME: не понимаю как менять...
     
     ay = body.Fy/body.m
     body.Vy += ay*dt
