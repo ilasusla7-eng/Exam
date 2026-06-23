@@ -34,7 +34,7 @@ def move_space_object(body, dt):
 
     ax = body.Fx/body.m
     body.Vx += ax*dt
-    body.x += body.Vx * dt  # FIXME: не понимаю как менять...
+    body.x = body.Vx * dt  # FIXME: не понимаю как менять...
     
     ay = body.Fy/body.m
     body.Vy += ay*dt
