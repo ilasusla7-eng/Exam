@@ -8,84 +8,160 @@ from solar_model import *
 from solar_input import *
 
 perform_execution = False
+"""Флаг цикличности выполнения расчёта"""
+
 physical_time = 0
+"""Физическое время от начала расчёта.
+Тип: float"""
+
 displayed_time = None
+"""Отображаемое на экране время.
+Тип: переменная tkinter"""
+
 time_step = None
+"""Шаг по времени при моделировании.
+Тип: float"""
+
 space_objects = []
-show_orbits = True
+"""Список космических объектов."""
+
 
 def execution():
-    global physical_time, displayed_time
-    dt = time_step.get()
-    if dt != 0:
-        recalculate_space_objects_positions(space_objects, dt)
+    """Функция исполнения -- выполняется циклически, вызывая обработку всех небесных тел,
+    а также обновляя их положение на экране.
+    Цикличность выполнения зависит от значения глобальной переменной perform_execution.
+    При perform_execution == True функция запрашивает вызов самой себя по таймеру через от 1 мс до 100 мс.
+    """
+    global physical_time
+    global displayed_time
+    recalculate_space_objects_positions(space_objects, time_step.get())
     for body in space_objects:
         update_object_position(space, body)
-    physical_time += dt
+    physical_time += time_step.get()
     displayed_time.set("%.1f" % physical_time + " seconds gone")
+
     if perform_execution:
         space.after(101 - int(time_speed.get()), execution)
 
+
 def start_execution():
+    """Обработчик события нажатия на кнопку Start.
+    Запускает циклическое исполнение функции execution.
+    """
     global perform_execution
     perform_execution = True
     start_button['text'] = "Pause"
     start_button['command'] = stop_execution
+
     execution()
+    print('Started execution...')
+
 
 def stop_execution():
+    """Обработчик события нажатия на кнопку Start.
+    Останавливает циклическое исполнение функции execution.
+    """
     global perform_execution
     perform_execution = False
     start_button['text'] = "Start"
     start_button['command'] = start_execution
+    print('Paused execution.')
 
-def toggle_orbits():
-    global show_orbits
-    show_orbits = not show_orbits
-    orbit_button['text'] = "Orbits: On" if show_orbits else "Orbits: Off"
-    set_orbits_visible(space, show_orbits)
-
-def recompute_orbits():
-    """Пересчёт орбит с фиксированными параметрами (не зависит от time_step)."""
-    compute_orbits_all(space_objects)
-    create_orbit_lines(space, space_objects)
-    set_orbits_visible(space, show_orbits)
 
 def open_file_dialog():
-    global space_objects, perform_execution
+    """Открывает диалоговое окно выбора имени файла и вызывает
+    функцию считывания параметров системы небесных тел из данного файла.
+    Считанные объекты сохраняются в глобальный список space_objects
+    """
+    global space_objects
+    global perform_execution
     perform_execution = False
-    for obj in space_objects:
-        if obj.image:
-            space.delete(obj.image)
+    _clear_objects()
     in_filename = askopenfilename(filetypes=(("Text file", ".txt"),))
-    if not in_filename:
-        return
     space_objects = read_space_objects_data_from_file(in_filename)
-    max_distance = max([max(abs(obj.x), abs(obj.y)) for obj in space_objects])
-    calculate_scale_factor(max_distance)
+    _display_system(space_objects)
+
+
+def generate_system_dialog():
+    """Генерирует процедурную систему из семи звёзд и отображает её.
+
+    Использует кинематическую орбитальную модель: звёзды неподвижны,
+    планеты вращаются по своим орбитам, спутники -- вокруг планет.
+    """
+    global space_objects
+    global perform_execution
+    perform_execution = False
+    _clear_objects()
+    space_objects = generate_seven_star_system()
+    _display_system(space_objects)
+    print('Generated 7-star system:', len(space_objects), 'objects')
+
+
+def toggle_orbits():
+    """Включает/выключает отображение орбит по состоянию флажка в интерфейсе."""
+    set_orbits_visible(space, show_orbits_var.get())
+
+
+def _clear_objects():
+    """Удаляет с холста изображения всех текущих объектов и линии орбит."""
+    global space_objects
     for obj in space_objects:
+        if getattr(obj, 'image', None) is not None:
+            space.delete(obj.image)
+    space.delete(orbit_item_tag)
+
+
+def _display_system(objects):
+    """Вычисляет масштаб и создаёт изображения для всех объектов системы.
+
+    Звёзды и планеты получают изображения; спутники -- маленькие круги.
+    Также (пере)рисовываются орбиты кинематической системы, если они есть.
+    """
+    max_distance = max([max(abs(obj.x), abs(obj.y)) for obj in objects])
+    calculate_scale_factor(max_distance)
+
+    for obj in objects:
         if obj.type == 'star':
             create_star_image(space, obj)
         elif obj.type == 'planet':
             create_planet_image(space, obj)
+        elif obj.type == 'satellite':
+            create_satellite_image(space, obj)
         else:
             raise AssertionError()
-    recompute_orbits()   # вычисляем и рисуем орбиты
+
+    draw_orbits(space, objects)
+
 
 def save_file_dialog():
+    """Открывает диалоговое окно выбора имени файла и вызывает
+    функцию считывания параметров системы небесных тел из данного файла.
+    Считанные объекты сохраняются в глобальный список space_objects
+    """
     out_filename = asksaveasfilename(filetypes=(("Text file", ".txt"),))
-    if out_filename:
-        write_space_objects_data_to_file(out_filename, space_objects)
+    write_space_objects_data_to_file(out_filename, space_objects)
+
 
 def main():
-    global physical_time, displayed_time, time_step, time_speed, space, start_button, orbit_button
+    """Главная функция главного модуля.
+    Создаёт объекты графического дизайна библиотеки tkinter: окно, холст, фрейм с кнопками, кнопки.
+    """
+    global physical_time
+    global displayed_time
+    global time_step
+    global time_speed
+    global space
+    global start_button
+    global show_orbits_var
+
     print('Modelling started!')
     physical_time = 0
 
     root = tkinter.Tk()
+    # космическое пространство отображается на холсте типа Canvas
     space = tkinter.Canvas(root, width=window_width, height=window_height, bg="black")
     space.pack(side=tkinter.TOP)
-
+    # нижняя панель с кнопками
     frame = tkinter.Frame(root)
     frame.pack(side=tkinter.BOTTOM)
 
@@ -106,8 +182,18 @@ def main():
     save_file_button = tkinter.Button(frame, text="Save to file...", command=save_file_dialog)
     save_file_button.pack(side=tkinter.LEFT)
 
-    orbit_button = tkinter.Button(frame, text="Orbits: On", command=toggle_orbits, width=10)
-    orbit_button.pack(side=tkinter.LEFT)
+    # Кнопка генерации системы из семи звёзд (кинематическая модель).
+    generate_button = tkinter.Button(frame, text="Generate 7 stars",
+                                     command=generate_system_dialog)
+    generate_button.pack(side=tkinter.LEFT)
+
+    # Флажок включения/выключения отображения орбит.
+    show_orbits_var = tkinter.BooleanVar()
+    show_orbits_var.set(show_orbits)
+    orbits_check = tkinter.Checkbutton(frame, text="Orbits",
+                                       variable=show_orbits_var,
+                                       command=toggle_orbits)
+    orbits_check.pack(side=tkinter.LEFT)
 
     displayed_time = tkinter.StringVar()
     displayed_time.set(str(physical_time) + " seconds gone")
