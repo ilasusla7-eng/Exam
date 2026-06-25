@@ -14,13 +14,17 @@ physical_time = 0
 """Физическое время от начала расчёта.
 Тип: float"""
 
-displayed_time = None
+displayed_time: tkinter.StringVar  # type: ignore[assignment]
 """Отображаемое на экране время.
 Тип: переменная tkinter"""
 
-time_step = None
+time_step: tkinter.DoubleVar  # type: ignore[assignment]
 """Шаг по времени при моделировании.
 Тип: float"""
+
+time_speed: tkinter.DoubleVar  # type: ignore[assignment]
+"""Скорость анимации.
+Тип: переменная tkinter"""
 
 space_objects = []
 """Список космических объектов."""
@@ -97,7 +101,8 @@ def _attach_file_orbits(space_objects):
         return
 
     def nearest_star(obj):
-        best, best_d = None, float('inf')
+        best = stars[0]
+        best_d = float('inf')
         for star in stars:
             d = math.hypot(obj.x - star.x, obj.y - star.y)
             if d < best_d:
@@ -120,12 +125,13 @@ def _attach_file_orbits(space_objects):
             obj.orbit_parent = star
             obj.orbit_radius = d
 
+        parent = obj.orbit_parent  # type: ignore[assignment]
         # Недостающие параметры кинематической модели: начальный угол,
         # направление и номер орбиты. Начальный угол берём из текущего
         # положения тела относительно центра, направление -- по часовой
         # стрелке по умолчанию (как спутники). Без них модель падала бы.
-        dx = obj.x - obj.orbit_parent.x
-        dy = obj.y - obj.orbit_parent.y
+        dx = obj.x - parent.x
+        dy = obj.y - parent.y
         obj.orbit_angle = math.atan2(dy, dx)
         obj.orbit_direction = -1  # по часовой стрелке
         obj.orbit_number = 1
@@ -167,8 +173,9 @@ def _display_system(objects):
     Звёзды и планеты получают изображения; спутники -- маленькие круги.
     Также (пере)рисовываются орбиты кинематической системы, если они есть.
     """
-    max_distance = max([max(abs(obj.x), abs(obj.y)) for obj in objects])
-    calculate_scale_factor(max_distance)
+    max_x = max([abs(obj.x) for obj in objects])
+    max_y = max([abs(obj.y) for obj in objects])
+    calculate_scale_factor(max_x, max_y)
 
     for obj in objects:
         if obj.type == 'star':

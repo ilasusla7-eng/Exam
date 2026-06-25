@@ -2,39 +2,49 @@
 # license: GPLv3
 
 class Star:
-    type = "star"
-    m = 0
-    x = 0
-    y = 0
-    Vx = 0
-    Vy = 0
-    Fx = 0
-    Fy = 0
-    R = 5
-    color = "red"
+    type: str = "star"
+    m: float = 0.0
+    x: float = 0.0
+    y: float = 0.0
+    Vx: float = 0.0
+    Vy: float = 0.0
+    Fx: float = 0.0
+    Fy: float = 0.0
+    R: int = 5
+    color: str = "red"
     image = None
-    orbit_points = []      # список кортежей (x, y)
+    orbit_points: list = []      # список кортежей (x, y)
     orbit_line_id = None   # ID линии на холсте
+    orbit_parent = None
+    orbit_radius = None
+    orbit_angle = None
+    orbit_number: int = 1
+    orbit_direction: int = -1
 
 
 class Planet:
-    type = "planet"
-    m = 0
-    x = 0
-    y = 0
-    Vx = 0
-    Vy = 0
-    Fx = 0
-    Fy = 0
-    R = 5
-    color = "green"
+    type: str = "planet"
+    m: float = 0.0
+    x: float = 0.0
+    y: float = 0.0
+    Vx: float = 0.0
+    Vy: float = 0.0
+    Fx: float = 0.0
+    Fy: float = 0.0
+    R: int = 5
+    color: str = "green"
     image = None
-    orbit_points = []
+    orbit_points: list = []
     orbit_line_id = None
+    orbit_parent = None
+    orbit_radius = None
+    orbit_angle = None
+    orbit_number: int = 1
+    orbit_direction: int = -1
 
 
 class Satellite(Planet):
-    type = "satellite"
+    type: str = "satellite"
     parent = None
-    orbit_points = []
+    orbit_points: list = []
     orbit_line_id = None

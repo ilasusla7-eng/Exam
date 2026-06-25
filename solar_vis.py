@@ -21,10 +21,13 @@ scale_factor = None
 Мера: количество пикселей на один метр."""
 
 
-def calculate_scale_factor(max_distance):
-    """Вычисляет значение глобальной переменной **scale_factor** по данной характерной длине"""
+def calculate_scale_factor(max_x, max_y):
+    """Вычисляет значение глобальной переменной **scale_factor**
+    по максимальным протяжённостям системы по осям X и Y."""
     global scale_factor
-    scale_factor = 0.4 * min(window_height, window_width) / max_distance
+    scale_x = 0.9 * window_width / (2 * max_x) if max_x > 0 else 1.0
+    scale_y = 0.9 * window_height / (2 * max_y) if max_y > 0 else 1.0
+    scale_factor = min(scale_x, scale_y)
     print('Scale factor:', scale_factor)
 
 
@@ -108,6 +111,8 @@ def draw_orbits(space, space_objects):
         parent = getattr(body, 'orbit_parent', None)
         radius = getattr(body, 'orbit_radius', None)
         if parent is None or radius is None:
+            continue
+        if body.type == 'satellite':
             continue
         _draw_orbit(space, parent.x, parent.y, radius)
 
