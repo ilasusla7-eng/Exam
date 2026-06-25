@@ -79,7 +79,57 @@ def open_file_dialog():
     _clear_objects()
     in_filename = askopenfilename(filetypes=(("Text file", ".txt"),))
     space_objects = read_space_objects_data_from_file(in_filename)
+    _attach_file_orbits(space_objects)
     _display_system(space_objects)
+
+
+def _attach_file_orbits(space_objects):
+    """Достраивает орбитальные параметры для тел, загруженных из файла.
+
+    У файла нет данных об орбитах, поэтому радиус орбиты планеты/спутника
+    считается как расстояние до центра притяжения: для планеты -- ближайшая
+    звезда, для спутника -- его планета (.parent). Звёзды служат центрами.
+    Это позволяет рисовать орбиты и для систем из файла.
+    """
+    import math
+    stars = [o for o in space_objects if o.type == 'star']
+    if not stars:
+        return
+
+    def nearest_star(obj):
+        best, best_d = None, float('inf')
+        for star in stars:
+            d = math.hypot(obj.x - star.x, obj.y - star.y)
+            if d < best_d:
+                best, best_d = star, d
+        return best, best_d
+
+    for obj in space_objects:
+        if obj.type == 'star':
+            obj.orbit_parent = None
+            obj.orbit_radius = None
+            continue
+        if obj.type == 'satellite':
+            parent = getattr(obj, 'parent', None)
+            if parent is None:
+                parent, _ = nearest_star(obj)
+            obj.orbit_parent = parent
+            obj.orbit_radius = math.hypot(obj.x - parent.x, obj.y - parent.y)
+        else:  # planet
+            star, d = nearest_star(obj)
+            obj.orbit_parent = star
+            obj.orbit_radius = d
+
+        # Недостающие параметры кинематической модели: начальный угол,
+        # направление и номер орбиты. Начальный угол берём из текущего
+        # положения тела относительно центра, направление -- по часовой
+        # стрелке по умолчанию (как спутники). Без них модель падала бы.
+        dx = obj.x - obj.orbit_parent.x
+        dy = obj.y - obj.orbit_parent.y
+        obj.orbit_angle = math.atan2(dy, dx)
+        obj.orbit_direction = -1  # по часовой стрелке
+        obj.orbit_number = 1
+
 
 
 def generate_system_dialog():

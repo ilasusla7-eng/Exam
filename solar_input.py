@@ -13,7 +13,7 @@ def read_space_objects_data_from_file(input_filename):
                 continue
             parts = line.split()
             object_type = parts[0].lower()
-            
+
             if object_type == "star":
                 star = Star()
                 parse_star_parameters(line, star)
@@ -69,23 +69,34 @@ def parse_satellite_parameters(line, satellite, objects):
 
 
 def write_space_objects_data_to_file(output_filename, space_objects):
-    """Сохраняет данные о космических объектах в файл."""
+    """Сохраняет данные о космических объектах в файл.
+
+    Формат совпадает с файлами вроде solar_system.txt: каждая строка --
+    один объект (Star/Planet/Satellite) с его параметрами. Для спутника
+    в конце дописывается индекс родительской планеты в списке.
+    """
     with open(output_filename, 'w') as out_file:
-        for i, obj in enumerate(space_objects):
+        for obj in space_objects:
             if obj.type == 'star':
-                out_file.write(f"Star {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
+                out_file.write(
+                    f"Star {obj.R} {obj.color} {obj.m} "
+                    f"{obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
             elif obj.type == 'planet':
-                out_file.write(f"Planet {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
+                out_file.write(
+                    f"Planet {obj.R} {obj.color} {obj.m} "
+                    f"{obj.x} {obj.y} {obj.Vx} {obj.Vy}\n")
             elif obj.type == 'satellite':
                 parent_index = space_objects.index(obj.parent)
-                out_file.write(f"Satellite {obj.R} {obj.color} {obj.m} {obj.x} {obj.y} {obj.Vx} {obj.Vy} {parent_index}\n")
+                out_file.write(
+                    f"Satellite {obj.R} {obj.color} {obj.m} "
+                    f"{obj.x} {obj.y} {obj.Vx} {obj.Vy} {parent_index}\n")
 
 
 # ---------------------------------------------------------------------------
 #  Процедурная генерация системы из семи звёзд.
 #  Звёзды выстроены в горизонтальный ряд; у каждой -- своё число планет,
 #  распределённых по орбитам. Направление вращения зависит от чётности
-#  орбиты (см. таблицу ниже). Для части планет создаются спутники.
+#  орбиты. Для части планет создаются спутники.
 # ---------------------------------------------------------------------------
 
 import math
@@ -104,14 +115,13 @@ _STARS_LAYOUT = [
     (30, 4),  # 7-я звезда (нечётная)
 ]
 
-# Горизонтальный шаг между звёздами. Подобран так, чтобы внешние орбиты
-# соседних звёзд пересекались (орбиты всех смежных звёзд пересекаются),
-# но сами звёзды не слипались.
-_STAR_SPACING = 180.0
+# Горизонтальный шаг между звёздами (физические единицы). Подобран так,
+# чтобы внешние орбиты соседних звёзд пересекались, но звёзды не слипались.
+_STAR_SPACING = 100.0
 
 # Радиусы орбит: первая орбита и шаг между соседними орбитами.
-_ORBIT_FIRST = 40.0
-_ORBIT_STEP = 16.0
+_ORBIT_FIRST = 46.0
+_ORBIT_STEP = 30.0
 
 # Цвета звёзд по порядку.
 _STAR_COLORS = ["white", "cyan", "yellow", "orange", "red",
@@ -124,10 +134,10 @@ _PLANET_COLORS = ["orange", "blue", "green", "red", "brown",
 # Цвета спутников.
 _SATELLITE_COLORS = ["white", "lightgray", "silver"]
 
-# Радиус орбиты спутника вокруг планеты. Должен быть достаточно велик, чтобы
-# в экранных координатах спутник оказывался за пределами диска планеты
-# (R планеты задан в пикселах, а радиус орбиты -- в физических единицах).
-_SATELLITE_ORBIT = 12.0
+# Радиус орбиты спутника вокруг планеты (физические единицы). Должен быть
+# достаточно велик, чтобы в экранных координатах спутник оказывался за
+# пределами диска планеты.
+_SATELLITE_ORBIT = 16.0
 
 
 def _orbit_radius_for(orbit_number):
@@ -154,8 +164,7 @@ def _distribute_planets_over_orbits(total, per_orbit):
 def _direction_for_orbit(orbit_number):
     """Направление вращения планет на орбите.
 
-    Чётные орбиты -- против часовой стрелки (+1), нечётные -- по часовой (-1).
-    (Звёзды при этом неподвижны.)
+    Чётные орбиты -- против часовой стрелки (+1), нечётные -- по часной (-1).
     """
     return +1 if orbit_number % 2 == 0 else -1
 
@@ -163,7 +172,7 @@ def _direction_for_orbit(orbit_number):
 def _make_star(index):
     """Создаёт звезду под номером **index** (с 1) и помещает её в ряд."""
     star = Star()
-    star.R = 8
+    star.R = 11
     star.color = _STAR_COLORS[(index - 1) % len(_STAR_COLORS)]
     star.m = 1.98892E30
     # Звёзды в ряд по оси x, симметрично относительно начала координат.
@@ -186,7 +195,7 @@ def _make_planet(star, planet_index_in_star, orbit_number,
     используется для назначения спутников и цвета.
     """
     planet = Planet()
-    planet.R = 3
+    planet.R = 6
     planet.color = _PLANET_COLORS[(planet_index_in_star - 1) % len(_PLANET_COLORS)]
     planet.m = 5.974E24
     radius = _orbit_radius_for(orbit_number)
@@ -212,7 +221,7 @@ def _make_satellite(planet, satellite_index, total_satellites):
     Спутники вращаются по часовой стрелке для всех орбит (по условию).
     """
     satellite = Satellite()
-    satellite.R = 1
+    satellite.R = 2
     satellite.color = _SATELLITE_COLORS[(satellite_index - 1) % len(_SATELLITE_COLORS)]
     satellite.m = 7.347E22
     radius = _SATELLITE_ORBIT
@@ -262,7 +271,6 @@ def generate_seven_star_system():
         orbits = _distribute_planets_over_orbits(total_planets, per_orbit)
         planet_counter = 0
         for orbit_number, planets_on_orbit in enumerate(orbits, start=1):
-            direction = _direction_for_orbit(orbit_number)
             for slot in range(1, planets_on_orbit + 1):
                 planet_counter += 1
                 planet = _make_planet(star, planet_counter, orbit_number,

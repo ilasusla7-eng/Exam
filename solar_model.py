@@ -51,8 +51,9 @@ def recalculate_space_objects_positions(space_objects, dt):
     """Пересчитывает координаты объектов.
 
     Если хотя бы у одного тела заданы орбитальные параметры (тело получено
-    процедурным генератором семи звёзд), используется кинематическая
-    орбитальная модель, иначе -- исходная ньютоновская.
+    процедурным генератором семи звёзд либо достроено при загрузке файла),
+    используется кинематическая орбитальная модель, иначе -- исходная
+    ньютоновская.
 
     Параметры:
 
@@ -111,23 +112,38 @@ def _angular_velocity(body):
     return speed * _direction_sign(body)
 
 
+def _current_angle(body):
+    """Возвращает текущий орбитальный угол тела, вычисляя его по позиции,
+    если атрибут orbit_angle не задан (надёжно для тел, загруженных из файла).
+    """
+    import math
+    parent = body.orbit_parent
+    angle = getattr(body, 'orbit_angle', None)
+    if angle is None:
+        angle = math.atan2(body.y - parent.y, body.x - parent.x)
+    return angle
+
+
 def _advance_planet(body, dt):
     """Сдвигает планету по её орбите вокруг звезды-владельца."""
     parent = body.orbit_parent
-    body.orbit_angle += _angular_velocity(body) * dt
-    ca, sa = _cos_sin(body.orbit_angle)
+    angle = _current_angle(body) + _angular_velocity(body) * dt
+    body.orbit_angle = angle
+    ca, sa = _cos_sin(angle)
     body.x = parent.x + body.orbit_radius * ca
     body.y = parent.y + body.orbit_radius * sa
     # синхронизируем скорость для корректного сохранения в файл
-    body.Vx = -body.orbit_radius * sa * _angular_velocity(body)
-    body.Vy = body.orbit_radius * ca * _angular_velocity(body)
+    w = _angular_velocity(body)
+    body.Vx = -body.orbit_radius * sa * w
+    body.Vy = body.orbit_radius * ca * w
 
 
 def _advance_satellite(body, dt):
     """Сдвигает спутник по его орбите вокруг планеты-владельца."""
     parent = body.orbit_parent
-    body.orbit_angle += _angular_velocity(body) * dt
-    ca, sa = _cos_sin(body.orbit_angle)
+    angle = _current_angle(body) + _angular_velocity(body) * dt
+    body.orbit_angle = angle
+    ca, sa = _cos_sin(angle)
     body.x = parent.x + body.orbit_radius * ca
     body.y = parent.y + body.orbit_radius * sa
 
