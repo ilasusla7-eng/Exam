@@ -185,6 +185,7 @@ def _make_star(index):
     # Звёзды в кинематической модели неподвижны.
     star.orbit_parent = None
     star.orbit_radius = None
+    star.kinematic = True
     return star
 
 
@@ -208,6 +209,7 @@ def _make_planet(star, planet_index_in_star, orbit_number,
     planet.orbit_angle = angle
     planet.orbit_number = orbit_number
     planet.orbit_direction = _direction_for_orbit(orbit_number)
+    planet.kinematic = True
     planet.x = star.x + radius * math.cos(angle)
     planet.y = star.y + radius * math.sin(angle)
     planet.Vx = 0.0
@@ -234,6 +236,7 @@ def _make_satellite(planet, satellite_index, total_satellites):
     # Спутники всегда вращаются по часовой стрелке.
     satellite.orbit_direction = -1
     satellite.parent = planet
+    satellite.kinematic = True
     satellite.x = planet.x + radius * math.cos(angle)
     satellite.y = planet.y + radius * math.sin(angle)
     satellite.Vx = 0.0

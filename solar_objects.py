@@ -20,6 +20,7 @@ class Star:
     orbit_angle = None
     orbit_number: int = 1
     orbit_direction: int = -1
+    kinematic: bool = False
 
 
 class Planet:
@@ -41,6 +42,7 @@ class Planet:
     orbit_angle = None
     orbit_number: int = 1
     orbit_direction: int = -1
+    kinematic: bool = False
 
 
 class Satellite(Planet):

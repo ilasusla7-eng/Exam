@@ -61,7 +61,7 @@ def recalculate_space_objects_positions(space_objects, dt):
     **dt** — шаг по времени
     """
 
-    if any(getattr(body, 'orbit_radius', None) is not None for body in space_objects):
+    if any(getattr(body, 'kinematic', False) for body in space_objects):
         advance_orbital_system(space_objects, dt)
         return
 
